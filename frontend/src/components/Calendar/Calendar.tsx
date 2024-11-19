@@ -1,16 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { isSameDay } from "../../utils/calendarUtils";
 import NewAppointment from "../NewAppointment/NewAppointment";
 import LeftIcon from "../Icons/LeftIcon";
 import RightIcon from "../Icons/RightIcon";
 import { appointmentApi } from "../../services/api";
 import { Appointment } from "../../types/types";
+import ViewAppointment, { ViewAppointmentHandle } from "../ViewAppointment/ViewAppointment";
 
 export function Calendar() {
  
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [visibleAppointments, setVisibleAppointments] = useState<Appointment[]>([])
+  const viewAppointmentRef = useRef<ViewAppointmentHandle>(null);
+
 
   function refetchAppointments() {
     fetchAppointments()
@@ -70,6 +73,10 @@ export function Calendar() {
     const newDay = new Date(selectedDate);
     newDay.setDate(selectedDate.getDate() + delta);
     setSelectedDate(newDay);
+  }
+
+  function handleAppointmentClick() {
+    viewAppointmentRef.current?.openModal()
   }
 
   return (
@@ -142,8 +149,9 @@ export function Calendar() {
               {visibleAppointments.map((appointment, index) => (
                 <div
                   key={index}
-                  className="absolute left-1 right-1 bg-blue-100 border border-blue-300 rounded p-2 text-sm"
+                  className="absolute left-1 right-1 bg-blue-100 border border-blue-300 rounded p-2 text-sm cursor-pointer"
                   style={getAppointmentStyle(appointment.start_time, appointment.end_time)}
+                  onClick={handleAppointmentClick}
                 >
                   <div className="font-semibold">{appointment.title}</div>
                   <div className="text-xs text-gray-600">
@@ -155,8 +163,8 @@ export function Calendar() {
           </div>
         </div>
       </div>
-
-      <NewAppointment refetchAppointments={refetchAppointments}/> 
+      <NewAppointment refetchAppointments={refetchAppointments}/>
+      <ViewAppointment ref={viewAppointmentRef} refetchAppointments={refetchAppointments}/>
     </div>
   )
 }
