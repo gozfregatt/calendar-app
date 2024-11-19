@@ -6,6 +6,7 @@ import RightIcon from "../Icons/RightIcon";
 import { appointmentApi } from "../../services/api";
 import { Appointment } from "../../types/types";
 import ViewAppointment, { ViewAppointmentHandle } from "../ViewAppointment/ViewAppointment";
+import dayjs from "dayjs";
 
 export function Calendar() {
  
@@ -14,8 +15,6 @@ export function Calendar() {
   const [visibleAppointments, setVisibleAppointments] = useState<Appointment[]>([])
   const viewAppointmentRef = useRef<ViewAppointmentHandle>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment>()
-
-
 
   function refetchAppointments() {
     fetchAppointments()
@@ -36,8 +35,8 @@ export function Calendar() {
 
 
   useEffect(() => {
-    const visible = appointments.filter(appointment => isSameDay(new Date(appointment.start_time), selectedDate))
-    setVisibleAppointments(visible)    
+    const visibles = appointments.filter(appointment => isSameDay(new Date(appointment.start_time), selectedDate))
+    setVisibleAppointments(visibles)    
   }, [appointments, selectedDate])
     
 
@@ -55,20 +54,67 @@ export function Calendar() {
     return (totalMinutes / totalDayMinutes) * 100;
   };
 
-  // Calculate appointment styles based on start and end times
-  const getAppointmentStyle = (start:string, end:string) => {
-    
-    const startTime = start.split('T')[1]
-    const endTime = end.split('T')[1]
+// Calculate appointment styles based on start and end times
+const getAppointmentStyle = (start: string, end: string): React.CSSProperties => {
+  const startTime = start.split('T')[1];
+  const endTime = end.split('T')[1];
 
-    const topPosition = getTimePosition(startTime);
-    const bottomPosition = getTimePosition(endTime);
-    const height = bottomPosition - topPosition;
-    
-    return {
-      top: `${topPosition}%`,
-      height: `${height}%`
-    };
+  const topPosition = getTimePosition(startTime);
+  const bottomPosition = getTimePosition(endTime);
+  const height = bottomPosition - topPosition;
+  
+  return {
+    top: `${topPosition}%`,
+    height: `${height}%`
+  };
+};
+
+  // Determine if two time ranges overlap
+  const hasTimeOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
+    const s1 = new Date(start1).getTime();
+    const e1 = new Date(end1).getTime();
+    const s2 = new Date(start2).getTime();
+    const e2 = new Date(end2).getTime();
+    return s1 < e2 && s2 < e1;
+  };
+
+  // Calculate left shifts for appointments to prevent overlap
+  const calculateAppointmentPositions = (appointments: Appointment[]): (Appointment & { leftShift: number })[] => {
+    // Sort appointments by start time for consistent positioning
+    const sortedAppointments = [...appointments].sort((a, b) => 
+      new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+    );
+
+    // Track used width positions to manage overlap
+    const overlapPositions: { leftShift: number; appointment: Appointment }[] = [];
+
+    return sortedAppointments.map(appointment => {
+      // Find the first available left shift position
+      let leftShift = 0;
+      
+      while (overlapPositions.some(pos => 
+        hasTimeOverlap(
+          appointment.start_time, 
+          appointment.end_time, 
+          pos.appointment.start_time, 
+          pos.appointment.end_time
+        ) && pos.leftShift === leftShift
+      )) {
+        leftShift += 35; // 30px increment for each overlap
+      }
+
+      // Record this appointment's position
+      const positionedAppointment = { 
+        ...appointment, 
+        leftShift 
+      };
+      overlapPositions.push({ 
+        leftShift, 
+        appointment 
+      });
+
+      return positionedAppointment;
+    });
   };
 
   function handleSelectedDate(delta:number) {
@@ -81,6 +127,8 @@ export function Calendar() {
     viewAppointmentRef.current?.openModal()
     setSelectedAppointment(appointment)
   }
+
+  const positionedAppointments = calculateAppointmentPositions(visibleAppointments);
 
   return (
     <div className="w-full max-w-md mx-auto p-4 text-center">
@@ -149,16 +197,20 @@ export function Calendar() {
               ))}
 
               {/* Appointments */}
-              {visibleAppointments.map((appointment, index) => (
+              {positionedAppointments.map((appointment, index) => (
                 <div
                   key={index}
-                  className="absolute left-1 right-1 bg-blue-100 border border-blue-300 rounded p-2 text-sm cursor-pointer"
-                  style={getAppointmentStyle(appointment.start_time, appointment.end_time)}
+                  className="absolute bg-blue-100 border border-blue-300 rounded p-0.5 text-sm text-start cursor-pointer overflow-hidden"
+                  style={{
+                    ...getAppointmentStyle(appointment.start_time, appointment.end_time),
+                    left: `calc(1rem + ${appointment.leftShift}px)`,
+                    right: '1rem'
+                  }}
                   onClick={() => handleAppointmentClick(appointment)}
                 >
                   <div className="font-semibold">{appointment.title}</div>
                   <div className="text-xs text-gray-600">
-                    {appointment.start_time} - {appointment.end_time}
+                    {dayjs(appointment.start_time).format("HH:mm")} - {dayjs(appointment.end_time).format("HH:mm")}
                   </div>
                 </div>
               ))}
