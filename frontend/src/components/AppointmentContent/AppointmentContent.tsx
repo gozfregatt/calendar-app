@@ -116,7 +116,18 @@ function AppointmentContent({closeModal, refetchAppointments, selectedAppointmen
     } catch (err) {
       alert("Failed to update Appointment, please try again. ")
     }
+  }
 
+  async function handleDeleteAppointment() {
+    if (!selectedAppointment) { return; }
+
+    try {
+      await appointmentApi.delete(selectedAppointment.id);
+      closeModal()
+      refetchAppointments()
+    } catch (err) {
+      alert("Failed to update Appointment, please try again. ")
+    }
   }
 
   return (
@@ -140,7 +151,9 @@ function AppointmentContent({closeModal, refetchAppointments, selectedAppointmen
       <p className="font-semibold mb-2">Appointment description</p>
       <input className="w-full border mb-2 p-1" placeholder="Add appointment description..." onChange={event => setAppointmentDescription(event.target.value as string)} value={appointmentDescription}></input>
 
-      
+      <p className="font-semibold mb-2">Attendees</p>
+      <EmployeeList employees={participants} handleClick={removeParticipant} buttonColor={"red"} placeholder="Add participants..."><DeleteIcon/></EmployeeList>
+
       <p className="font-semibold mb-2">Department</p>
       <DropdownMenu
         className="w-full border mb-2"
@@ -150,23 +163,31 @@ function AppointmentContent({closeModal, refetchAppointments, selectedAppointmen
 
       <p className="font-semibold mb-2">Employees</p>
       <EmployeeList employees={employees} handleClick={addParticipant} buttonContent={"Add"} buttonColor={"green"} placeholder="Select department..."/>
-
-      <p className="font-semibold mb-2">Attendees</p>
-      <EmployeeList employees={participants} handleClick={removeParticipant} buttonColor={"red"} placeholder="Add participants..."><DeleteIcon/></EmployeeList>
       
-      <div className="flex justify-end space-x-2">
-      <button 
-          onClick={handleSaveAppointment} 
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Save
-        </button>
-        <button 
-          onClick={closeModal} 
-          className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
-        >
-          Cancel
-        </button>
+      <div className="flex justify-between space-x-2">
+        
+        {selectedAppointment && (
+          <button
+          onClick={handleDeleteAppointment}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 justify-start"
+          >
+            Delete
+          </button>
+        )}
+        <div className="flex space-x-2 ml-auto">
+          <button 
+            onClick={handleSaveAppointment} 
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Save
+          </button>
+          <button 
+            onClick={closeModal} 
+            className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   )
