@@ -12,4 +12,8 @@ Development time allocation:
   - Main calendar component implementation: 3 hours
   - Appointment modal implementation: 2.5 hours
 
+![Backend planning](img/Backend-plan.jpg)
+
+![Frontend planning](img/Frontend-plan.jpg)
+
 
