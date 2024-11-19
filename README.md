@@ -27,7 +27,7 @@ Init Backend:
 
 
 
-- start ps
+- start postgeSQL
 - create postgeSQL db 
 - Populate DB with data, OR
 - restore the `calendar_db.sql`:
