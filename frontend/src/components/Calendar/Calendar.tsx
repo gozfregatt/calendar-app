@@ -12,21 +12,6 @@ export function Calendar() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [visibleAppointments, setVisibleAppointments] = useState<Appointment[]>([])
 
-  // useEffect(() => {
-  //   console.log("Fetching appointments")
-  //   async function fetchAppointments () {
-  //     try {
-  //       const response = await appointmentApi.getAll();
-  //       setAppointments(response.data);
-  //     } catch (err) {
-
-  //       alert('Failed to fetch Appointments');
-  //     }
-  //   };
-
-  //   fetchAppointments();
-  // },[] )
-
   function refetchAppointments() {
     fetchAppointments()
   }

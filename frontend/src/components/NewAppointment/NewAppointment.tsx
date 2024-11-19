@@ -112,11 +112,16 @@ function MenuContent({closeModal, refetchAppointments}: ContentProps) {
       <div className="grid-cols-2 grid mb-4">
         <div>
           <p className="font-semibold mb-2">Start Date</p>
-          <input className="border" aria-label="Date and time" type="datetime-local" defaultValue={dayjs().format('YYYY-MM-DDTHH:mm')} onChange={event => setStartDateTime(new Date(event.target.value))}/>
+          <input className="border" aria-label="Date and time" type="datetime-local" 
+            defaultValue={dayjs().format('YYYY-MM-DDTHH:mm')} 
+            onChange={event => {setStartDateTime(new Date(event.target.value)); console.log("Change: ", event.target.value)}}/>
         </div>
         <div>
           <p className="font-semibold mb-2">End Date</p>
-          <input className="border" aria-label="Date and time" type="datetime-local" defaultValue={dayjs().format('YYYY-MM-DDTHH:mm')} onChange={event => setEndDateTime(new Date(event.target.value))}/>
+          <input className="border" aria-label="Date and time" type="datetime-local" 
+            // defaultValue={dayjs().format('YYYY-MM-DDTHH:mm')} 
+            value={startDateTime ? dayjs(startDateTime).format('YYYY-MM-DDTHH:mm') : dayjs().format('YYYY-MM-DDTHH:mm')}
+            onChange={event => setEndDateTime(new Date(event.target.value))}/>
         </div>
       </div>
       <p className="font-semibold mb-2">Appointment description</p>
