@@ -19,8 +19,8 @@ function EmployeeList ({employees, handleClick, buttonContent, buttonColor, plac
     {!employees.length && (
       <p className="text-gray-400 justify-self-start p-1" >{placeholder}</p>
     )}
-    {employees.map(employee => (
-      <li className="grid-cols-7 grid pb-1">
+    {employees.map((employee, index) => (
+      <li key={`employee-${employee.id}-${index}`} className="grid-cols-7 grid pb-1">
         <span className=" justify-self-start col-span-2">{employee.name}</span>
         <span className=" justify-self-start col-span-4">{employee.email}</span> 
         <button className={className} onClick={() => handleClick(employee)}>{buttonContent ? buttonContent : children}</button>

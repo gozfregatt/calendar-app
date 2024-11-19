@@ -13,6 +13,8 @@ export function Calendar() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [visibleAppointments, setVisibleAppointments] = useState<Appointment[]>([])
   const viewAppointmentRef = useRef<ViewAppointmentHandle>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment>()
+
 
 
   function refetchAppointments() {
@@ -75,8 +77,9 @@ export function Calendar() {
     setSelectedDate(newDay);
   }
 
-  function handleAppointmentClick() {
+  function handleAppointmentClick(appointment: Appointment) {
     viewAppointmentRef.current?.openModal()
+    setSelectedAppointment(appointment)
   }
 
   return (
@@ -151,7 +154,7 @@ export function Calendar() {
                   key={index}
                   className="absolute left-1 right-1 bg-blue-100 border border-blue-300 rounded p-2 text-sm cursor-pointer"
                   style={getAppointmentStyle(appointment.start_time, appointment.end_time)}
-                  onClick={handleAppointmentClick}
+                  onClick={() => handleAppointmentClick(appointment)}
                 >
                   <div className="font-semibold">{appointment.title}</div>
                   <div className="text-xs text-gray-600">
@@ -164,7 +167,7 @@ export function Calendar() {
         </div>
       </div>
       <NewAppointment refetchAppointments={refetchAppointments}/>
-      <ViewAppointment ref={viewAppointmentRef} refetchAppointments={refetchAppointments}/>
+      <ViewAppointment ref={viewAppointmentRef} refetchAppointments={refetchAppointments} appointment={selectedAppointment}/>
     </div>
   )
 }

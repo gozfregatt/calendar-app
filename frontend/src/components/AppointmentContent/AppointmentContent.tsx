@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import SimpleModal from "../SimpleModal/SimpleModal";
 import DropdownMenu from "../DropdownMenu/DropdownMenu";
-import { appointmentApi, departmentApi } from "../../services/api"
+import { appointmentApi, departmentApi, employeeApi } from "../../services/api"
 import { Appointment, Department, Employee } from "../../types/types";
 import dayjs from 'dayjs';
 import DeleteIcon from "../Icons/DeleteIcon";
@@ -10,15 +10,14 @@ import EmployeeList from "../EmployeeList/EmployeeList";
 interface Props {
   closeModal:() => void;
   refetchAppointments:() => void;
+  selectedAppointment?:Appointment;
 }
 
-function AppointmentContent({closeModal, refetchAppointments}: Props) {
+function AppointmentContent({closeModal, refetchAppointments, selectedAppointment}: Props) {
 
   const [departments, setDepartments] = useState<Department[]>([]);
-
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [participants, setParticipants] = useState<Employee[]>([]);
-
   const [selectedDepartment, setselectedDepartment] = useState('');
   const [startDateTime, setStartDateTime] = useState<Date>();
   const [endDateTime, setEndDateTime] = useState<Date>();
@@ -26,7 +25,8 @@ function AppointmentContent({closeModal, refetchAppointments}: Props) {
   const [appointmentDescription, setAppointmentDescription] = useState<string>('');
 
   useEffect(() => {
-    async function fetchDepartments () {
+    const fetchDepartments = async () => {
+
       try {
         const response = await departmentApi.getAll();
         setDepartments(response.data);
@@ -37,6 +37,30 @@ function AppointmentContent({closeModal, refetchAppointments}: Props) {
     };
 
     fetchDepartments();
+  }, []);
+
+  useEffect(() =>{
+    if (selectedAppointment) {
+      setAppointmentTitle(selectedAppointment.title)
+      setAppointmentDescription(selectedAppointment.description)
+      setStartDateTime(new Date(selectedAppointment.start_time))
+      setEndDateTime(new Date(selectedAppointment.end_time))
+
+      const fetchEmployees = async () => {
+        try {
+          const response = await employeeApi.getAll();
+          return response.data;
+        } catch (err) {
+          alert('Failed to fetch empolees');
+          return []
+        }
+      };
+
+      fetchEmployees().then(allEmployees => {
+        const selectedEmployees = allEmployees.filter((employee) => selectedAppointment.employees.find(selectedEmployee => selectedEmployee === employee.id))
+        setParticipants(selectedEmployees)
+      });
+    }
   }, []);
 
   const handleSelectDepartment = (department: string) => {
@@ -72,37 +96,49 @@ function AppointmentContent({closeModal, refetchAppointments}: Props) {
       description: appointmentDescription,
       start_time: dayjs(startDateTime).format('YYYY-MM-DDTHH:mm'),
       end_time: dayjs(endDateTime).format('YYYY-MM-DDTHH:mm'),
-      employees: employees.map(employee => employee.id)
+      employees: participants.map(participant => participant.id)
     }
+    if (!selectedAppointment) {
+      try {
+        await appointmentApi.create(appointmentData);
+        closeModal()
+        refetchAppointments()
+      } catch (err) {
+        alert("Failed to create Appointment, please try again. ")
+      }
+      return;
+    }
+
     try {
-      await appointmentApi.create(appointmentData);
+      await appointmentApi.update(selectedAppointment.id, appointmentData);
       closeModal()
       refetchAppointments()
     } catch (err) {
-      alert("Failed to create Appointment, please try again. ")
+      alert("Failed to update Appointment, please try again. ")
     }
+
   }
 
   return (
     <div className="">
       <p className="font-semibold mb-2">Title</p>
-      <input className="w-full border mb-2 p-1" placeholder="Add appointment title" onChange={event => setAppointmentTitle(event.target.value as string)}></input>
+      <input className="w-full border mb-2 p-1" placeholder="Add appointment title" onChange={event => setAppointmentTitle(event.target.value as string)} value={appointmentTitle}></input>
       <div className="grid-cols-2 grid mb-4">
         <div>
           <p className="font-semibold mb-2">Start Date</p>
           <input className="border" aria-label="Date and time" type="datetime-local" 
-            defaultValue={dayjs().format('YYYY-MM-DDTHH:mm')} 
+            value={startDateTime ? dayjs(startDateTime).format('YYYY-MM-DDTHH:mm') : dayjs().format('YYYY-MM-DDTHH:mm')}
             onChange={event => {setStartDateTime(new Date(event.target.value)); console.log("Change: ", event.target.value)}}/>
         </div>
         <div>
           <p className="font-semibold mb-2">End Date</p>
           <input className="border" aria-label="Date and time" type="datetime-local" 
-            value={startDateTime ? dayjs(startDateTime).format('YYYY-MM-DDTHH:mm') : dayjs().format('YYYY-MM-DDTHH:mm')}
+            value={endDateTime ? dayjs(endDateTime).format('YYYY-MM-DDTHH:mm') : startDateTime ? dayjs(startDateTime).format('YYYY-MM-DDTHH:mm') : dayjs().format('YYYY-MM-DDTHH:mm')}
             onChange={event => setEndDateTime(new Date(event.target.value))}/>
         </div>
       </div>
       <p className="font-semibold mb-2">Appointment description</p>
-      <input className="w-full border mb-2 p-1" placeholder="Add appointment description..." onChange={event => setAppointmentDescription(event.target.value as string)}></input>
+      <input className="w-full border mb-2 p-1" placeholder="Add appointment description..." onChange={event => setAppointmentDescription(event.target.value as string)} value={appointmentDescription}></input>
 
       
       <p className="font-semibold mb-2">Department</p>
